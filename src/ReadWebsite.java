@@ -26,18 +26,26 @@ import com.kennycason.kumo.WordFrequency;
 import com.kennycason.kumo.bg.RectangleBackground;
 import com.kennycason.kumo.font.FontWeight;
 import com.kennycason.kumo.font.KumoFont;
-import com.kennycason.kumo.font.scale.LinearFontScalar;
 import com.kennycason.kumo.font.scale.SqrtFontScalar;
 import com.kennycason.kumo.nlp.FrequencyAnalyzer;
 import com.kennycason.kumo.nlp.normalize.UpperCaseNormalizer;
 import com.kennycason.kumo.palette.ColorPalette;
+import com.sun.jna.Library;
+import com.sun.jna.Native;
+import com.sun.jna.win32.W32APIOptions;
 
 public class ReadWebsite {
 	private String[] url;
 	private String textFile;
 	private String textFileWords;
-	private static final int wordUsedLimitToShow = 1;
+	private static final int wordUsedLimitToShow = 5;
+	
+	 public static interface User32 extends Library {
+	     User32 INSTANCE = (User32) Native.loadLibrary("user32",User32.class,W32APIOptions.DEFAULT_OPTIONS);        
+	     boolean SystemParametersInfo (int one, int two, String s ,int three);         
+	 }
 	public static void main(String[] args) throws IOException {
+		String wallpaper_file = "mini.jpg";
 		ReadWebsite readWebsite = new ReadWebsite();
 		readWebsite.textFile = "text.txt";
 		readWebsite.textFileWords = "textWords.txt";
@@ -53,20 +61,22 @@ public class ReadWebsite {
 		//readWebsite.printWords(words);
 		readWebsite.printWordsToFile(words);
 		readWebsite.createImage();
+		
+		User32.INSTANCE.SystemParametersInfo(0x0014, 0, "C:\\Users\\carls\\workspace\\WebCrawl\\img.png" , 1);
 	}
 	private void createImage() throws IOException{
 		final FrequencyAnalyzer frequencyAnalyzer = new FrequencyAnalyzer();
 		frequencyAnalyzer.setNormalizer(new UpperCaseNormalizer());
-		frequencyAnalyzer.setMinWordLength(2);
-		frequencyAnalyzer.setWordFrequenciesToReturn(1800);
+		frequencyAnalyzer.setMinWordLength(wordUsedLimitToShow);
+		frequencyAnalyzer.setWordFrequenciesToReturn(800);
 		final List<WordFrequency> wordFrequencies = frequencyAnalyzer.load(getInputStream(textFileWords));
-		final Dimension dimension = new Dimension(800, 600);
+		final Dimension dimension = new Dimension(1440, 900);
 		final WordCloud wordCloud = new WordCloud(dimension, CollisionMode.PIXEL_PERFECT);
-		//wordCloud.setPadding(0);
+		wordCloud.setPadding(3);
 		wordCloud.setKumoFont(new KumoFont("LICENSE PLATE", FontWeight.BOLD));
 		wordCloud.setBackground(new RectangleBackground(dimension));
 		wordCloud.setColorPalette(new ColorPalette(new Color(0x4055F1), new Color(0x408DF1), new Color(0x40AAF1), new Color(0x40C5F1), new Color(0x40D3F1), new Color(0xFFFFFF)));
-		wordCloud.setFontScalar(new SqrtFontScalar(1, 210));
+		wordCloud.setFontScalar(new SqrtFontScalar(10, 80));
 		wordCloud.build(wordFrequencies);
 		wordCloud.writeToFile("img.png");
 	}
@@ -114,7 +124,7 @@ public class ReadWebsite {
 			long thisTime = new Date().getTime();
 			if(thisTime - oldTime < sixHours){
 				System.out.println("Using old data from textfile.");
-				return false;
+				return true;
 			}
 		} catch (IOException e) {
 			System.out.println("Error! could not read textfile.txt");
